@@ -78,3 +78,15 @@ impl<N> Function<Successor<N>> for IsZero {
     type Apply = False;
 }
 
+pub trait AnyTrue {
+    type Output: Bool;
+}
+impl AnyTrue for Nil {
+    type Output = False;
+}
+impl<L: List> AnyTrue for Cons<True, L> {
+    type Output = True;
+}
+impl<L: List + AnyTrue> AnyTrue for Cons<False, L> {
+    type Output = <L as AnyTrue>::Output;
+}

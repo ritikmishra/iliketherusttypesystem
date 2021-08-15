@@ -1,6 +1,7 @@
 #![feature(generic_associated_types, associated_type_bounds)]
 
 mod booleans;
+mod nqueens;
 mod numbers;
 mod lists;
 mod functions;
