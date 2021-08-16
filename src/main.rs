@@ -10,6 +10,9 @@ mod numbers;
 mod lists;
 mod functions;
 
+use lists::StrRepr;
+
 fn main() {
-    let x: <NQueensSolution as Function<N5>>::Apply = Default::default();
+    type Solution = <NQueensSolution as Function<N5>>::Apply;
+    println!("{}", Solution::str_repr())
 }

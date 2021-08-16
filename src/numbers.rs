@@ -1,10 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{
-    booleans::{Bool, False, True},
-    functions::Function,
-    lists::{Cons, List, Nil},
-};
+use crate::{booleans::{Bool, False, True}, functions::Function, lists::{Cons, List, Nil, StrRepr}};
 
 #[derive(Default)]
 pub struct Zero;
@@ -19,6 +15,12 @@ impl Number for Zero {
 }
 impl<N: Number> Number for Successor<N> {
     const VALUE: usize = N::VALUE + 1;
+}
+
+impl<N: Number> StrRepr for N {
+    fn str_repr() -> String {
+        format!("{}", N::VALUE)
+    }
 }
 
 pub type N0 = Zero;

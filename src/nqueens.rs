@@ -1,11 +1,17 @@
 use std::marker::PhantomData;
 
-use crate::{booleans::{Bool, False, Not, Or, True}, functions::{AnyTrue, Filter, Function, Map, FlatMap}, lists::{Cons, List, Nil}, numbers::{N0, N1, N2, N3, N4, N5, N8, Number, PeanoAbsDiff, PeanoEqual, PeanoLT, Range, Successor, Zero}};
+use crate::{booleans::{Bool, False, Not, Or, True}, functions::{AnyTrue, Filter, Function, Map, FlatMap}, lists::{Cons, List, Nil, StrRepr}, numbers::{N0, N1, N2, N3, N4, N5, N8, Number, PeanoAbsDiff, PeanoEqual, PeanoLT, Range, Successor, Zero}};
 
 #[derive(Default)]
-struct Queen<X: Number, Y: Number>(PhantomData<X>, PhantomData<Y>);
+pub struct Queen<X: Number, Y: Number>(PhantomData<X>, PhantomData<Y>);
 
-trait Threatens<QueenA, QueenB> {
+impl<X: Number, Y: Number> StrRepr for Queen<X, Y> {
+    fn str_repr() -> String {
+        format!("Queen({}, {})", X::str_repr(), Y::str_repr())
+    }
+}
+
+pub trait Threatens<QueenA, QueenB> {
     type Output: Bool;
 }
 impl<AX, AY, BX, BY> Threatens<Queen<AX, AY>, Queen<BX, BY>> for (Queen<AX, AY>, Queen<BX, BY>)
@@ -36,7 +42,7 @@ fn threatens_type_test() {
     let _: <(Queen<N1, N0>, Queen<N4, N3>) as Threatens<_, _>>::Output = True;
 }
 
-struct Threatens1<ThisQueen>(PhantomData<ThisQueen>);
+pub struct Threatens1<ThisQueen>(PhantomData<ThisQueen>);
 impl<ThisQueen, OtherQueen> Function<OtherQueen> for Threatens1<ThisQueen>
 where
     (ThisQueen, OtherQueen): Threatens<ThisQueen, OtherQueen>,
@@ -44,7 +50,7 @@ where
     type Apply = <(ThisQueen, OtherQueen) as Threatens<ThisQueen, OtherQueen>>::Output;
 }
 
-trait Safe<ExistingQueens, NewQueen> {
+pub trait Safe<ExistingQueens, NewQueen> {
     type Output: Bool;
 }
 impl<ExistingQueens: List, X: Number, Y: Number> Safe<ExistingQueens, Queen<X, Y>>
@@ -60,7 +66,7 @@ where
 }
 
 /// Partial application of `Safe`
-struct Safe1<Config>(PhantomData<Config>);
+pub struct Safe1<Config>(PhantomData<Config>);
 impl<Config, NewQueen> Function<NewQueen> for Safe1<Config>
 where
     (Config, NewQueen): Safe<Config, NewQueen>,
@@ -68,13 +74,13 @@ where
     type Apply = <(Config, NewQueen) as Safe<Config, NewQueen>>::Output;
 }
 
-struct Queen1<X: Number>(PhantomData<X>);
+pub struct Queen1<X: Number>(PhantomData<X>);
 impl<X: Number, Y: Number> Function<Y> for Queen1<X> {
     type Apply = Queen<X, Y>;
 }
 
 /// Return a list of queens with given x pos and y in [0, NumQueens)
-trait QueensInRow<NumQueens: Number, XPos: Number> {
+pub trait QueensInRow<NumQueens: Number, XPos: Number> {
     type Output: List;
 }
 impl<NumQueens, XPos> QueensInRow<NumQueens, XPos> for (NumQueens, XPos)
@@ -87,7 +93,7 @@ where
 }
 
 /// List -> Item -> Cons<List, Item>
-struct Prepend<Items: List>(PhantomData<Items>);
+pub struct Prepend<Items: List>(PhantomData<Items>);
 impl<I, L: List> Function<I> for Prepend<L> {
     type Apply = Cons<I, L>;
 }
@@ -96,7 +102,7 @@ fn test_prepend() {
     // let _: <Prepend<Cons<N0, Cons<N0, Nil>>> as Function<N0>>::Apply = 0;
 }
 
-trait AddQueen<N: Number, X: Number, ExistingQueens: List> {
+pub trait AddQueen<N: Number, X: Number, ExistingQueens: List> {
     type Output;
 }
 impl<N: Number, X: Number, ExistingQueens: List> AddQueen<N, X, ExistingQueens> for ExistingQueens
@@ -116,7 +122,7 @@ fn test_add_queen() {
     // let _: <Nil as AddQueen<N3, N0, _>>::Output = 3;
 }
 
-struct AddQueen2<N: Number, X: Number>(PhantomData<N>, PhantomData<X>);
+pub struct AddQueen2<N: Number, X: Number>(PhantomData<N>, PhantomData<X>);
 impl<N: Number, X: Number, ExistingQueens: List + AddQueen<N, X, ExistingQueens>>
     Function<ExistingQueens> for AddQueen2<N, X>
 {
@@ -127,7 +133,7 @@ fn test_add_queen2() {
     // let _: <AddQueen2<N3, N0> as Function<Nil>>::Apply = 3;
 }
 
-trait AddQueenToAll<N: Number, X: Number, Configs: List> {
+pub trait AddQueenToAll<N: Number, X: Number, Configs: List> {
     type Output;
 }
 impl<N: Number, X: Number, Configs: List> AddQueenToAll<N, X, Configs> for Configs
@@ -149,12 +155,12 @@ fn test_add_queen_to_all() {
     // List of List of Queens
     type ListOfConfigurations = <AddQueen2<N4, N0> as Function<Nil>>::Apply;
     // ListOfConfigurations is indeed a list of lists
-    let _: <ListOfConfigurations as Map<CheckIsList>>::Output = 3;
+    // let _: <ListOfConfigurations as Map<CheckIsList>>::Output = 3;
     // let _: ListOfConfigurations = 3;
-    let _: <ListOfConfigurations as AddQueenToAll<N4, N1, _>>::Output = 3;
+    // let _: <ListOfConfigurations as AddQueenToAll<N4, N1, _>>::Output ;
 }
 
-trait AddQueensIf<Predicate, N, X, Configs> {
+pub trait AddQueensIf<Predicate, N, X, Configs> {
     type Output;
 }
 
@@ -176,7 +182,7 @@ where
 
 /// Given an N x N board, and a list of possible configurations
 /// Get configurations where queen on rows [X, N) have been placed down
-trait AddQueens<N, X, Configs> {
+pub trait AddQueens<N, X, Configs> {
     type Output;
 }
 impl<N: Number, X, Configs> AddQueens<N, X, Configs> for Configs
@@ -196,5 +202,5 @@ where
     type Apply = <Cons<Nil, Nil> as AddQueens<N, Zero, Cons<Nil, Nil>>>::Output;
 }
 
-trait NumberOps<N: Number>: Number + PeanoEqual<N> + PeanoAbsDiff<N> {}
+pub trait NumberOps<N: Number>: Number + PeanoEqual<N> + PeanoAbsDiff<N> {}
 impl<N1: Number, N2: Number + PeanoEqual<N1> + PeanoAbsDiff<N1>> NumberOps<N1> for N2 {}

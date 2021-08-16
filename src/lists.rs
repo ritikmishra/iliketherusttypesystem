@@ -9,6 +9,36 @@ pub trait List {}
 impl List for Nil {}
 impl<Item, Rest> List for Cons<Item, Rest> where Rest: List {}
 
+trait Items {
+    fn items() -> Vec<String>;
+}
+impl Items for Nil {
+    fn items() -> Vec<String> {
+        vec![]
+    }
+}
+impl<Item: StrRepr, Rest: Items> Items for Cons<Item, Rest> {
+    fn items() -> Vec<String> {
+        let mut rest = Rest::items();
+        rest.insert(0, Item::str_repr());
+        rest
+    }
+}
+
+pub trait StrRepr {
+    fn str_repr() -> String;
+}
+impl StrRepr for Nil {
+    fn str_repr() -> String {
+        "[]".into()
+    }
+}
+impl<I, R> StrRepr for Cons<I, R> where Cons<I, R>: Items {
+    fn str_repr() -> String {
+        format!("[{}]", Self::items().join(", "))
+    }
+}
+
 pub trait First {
     type First;
 }
@@ -50,5 +80,3 @@ where
 {
     type ListConcatAll = <FirstList as ListConcat>::ConcatWith<OtherLists::ListConcatAll>;
 }
-
-
