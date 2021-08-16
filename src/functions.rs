@@ -1,4 +1,8 @@
-use crate::{booleans::{Bool, False, True}, lists::{Cons, First, List, ListConcat, Nil}, numbers::{N1, N2, N7, PeanoAbsDiff, Range, Successor, Zero}};
+use crate::{
+    booleans::{Bool, False, True},
+    lists::{Cons, List, ListConcat, Nil},
+    numbers::{PeanoAbsDiff, Successor, Zero, N1},
+};
 
 pub trait Function<T> {
     type Apply;
@@ -8,7 +12,7 @@ pub trait Predicate<T>: Function<T> {}
 impl<T, U: Function<T>> Predicate<T> for U where Self::Apply: Bool {}
 
 pub trait Map<F> {
-    type Output;
+    type Output: List;
 }
 impl<F> Map<F> for Nil {
     type Output = Nil;
@@ -34,20 +38,22 @@ where
     type Output = <<XS as Filter<F>>::Output as PrependIf<F::Apply, X>>::Output;
 }
 
-pub trait MapCat<F> {
+/// Given a list of lists, map each list using the function, and concat the results together
+pub trait FlatMap<F> {
     type Output;
 }
-impl<F> MapCat<F> for Nil {
+impl<F> FlatMap<F> for Nil {
     type Output = Nil;
 }
-impl<F, FirstList, RestList: MapCat<F>> MapCat<F> for Cons<FirstList, RestList>
+impl<FirstItem, F: Function<FirstItem>, RestItems: FlatMap<F>> FlatMap<F>
+    for Cons<FirstItem, RestItems>
 where
-    FirstList: Map<F>,
-    <FirstList as Map<F>>::Output: List + ListConcat,
-    <RestList as MapCat<F>>::Output: ListConcat,
+    <F as Function<FirstItem>>::Apply: List + ListConcat,
+    <RestItems as FlatMap<F>>::Output: ListConcat,
 {
-    type Output =
-        <<FirstList as Map<F>>::Output as ListConcat>::ConcatWith<<RestList as MapCat<F>>::Output>;
+    type Output = <<F as Function<FirstItem>>::Apply as ListConcat>::ConcatWith<
+        <RestItems as FlatMap<F>>::Output,
+    >;
 }
 
 pub trait PrependIf<Predicate: Bool, Item> {

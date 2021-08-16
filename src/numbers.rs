@@ -1,8 +1,14 @@
 use std::marker::PhantomData;
 
-use crate::{booleans::{Bool, False, True}, lists::{Cons, List, Nil}};
+use crate::{
+    booleans::{Bool, False, True},
+    functions::Function,
+    lists::{Cons, List, Nil},
+};
 
+#[derive(Default)]
 pub struct Zero;
+#[derive(Default)]
 pub struct Successor<N>(PhantomData<N>);
 
 pub trait Number {
@@ -87,7 +93,6 @@ impl<N: Number, M: Number + PeanoAbsDiff<N>> PeanoAbsDiff<Successor<M>> for Succ
     type AbsDiff = <M as PeanoAbsDiff<N>>::AbsDiff;
 }
 
-
 pub trait Range {
     type Range: List;
 }
@@ -97,4 +102,9 @@ impl Range for Zero {
 /// Returns list that counts down from N-1. The list has N elements in it;
 impl<N: Number + Range> Range for Successor<N> {
     type Range = Cons<N, <N as Range>::Range>;
+}
+
+pub struct RangeFn;
+impl<N: Range> Function<N> for RangeFn {
+    type Apply = N::Range;
 }

@@ -1,18 +1,15 @@
 #![feature(generic_associated_types, associated_type_bounds)]
 
+use functions::Function;
+use nqueens::NQueensSolution;
+use numbers::N5;
+
 mod booleans;
 mod nqueens;
 mod numbers;
 mod lists;
 mod functions;
-use lists::{Cons, Nil, ListConcat};
-
-#[derive(Default)]
-struct NC<const FOO: usize>;
 
 fn main() {
-    type OneTwoThree = Cons<NC<1>, Cons<NC<2>, Cons<NC<3>, Nil>>>;
-    type FourFive = Cons<NC<4>, Cons<NC<5>, Nil>>;
-    type Concated = <OneTwoThree as ListConcat>::ConcatWith<FourFive>;
-    // let foo: Concated = 4;
+    let x: <NQueensSolution as Function<N5>>::Apply = Default::default();
 }
