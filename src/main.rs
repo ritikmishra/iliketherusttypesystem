@@ -9,6 +9,7 @@ mod nqueens;
 mod numbers;
 mod lists;
 mod functions;
+mod gameoflife;
 
 use lists::StrRepr;
 
