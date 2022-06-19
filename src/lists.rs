@@ -7,7 +7,7 @@ pub struct Cons<X, XS>(PhantomData<X>, PhantomData<XS>);
 
 #[macro_export]
 macro_rules! make_list {
-    ($x:ty, $($xs:ty,)+) => {
+    ($x:ty, $($xs:ty),+ $(,)?) => {
         $crate::lists::Cons<$x, $crate::make_list!($($xs,)+)>
     };
     ($x:ty $(,)?) => {

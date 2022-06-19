@@ -12,12 +12,10 @@ use crate::{
     functions::{Increment, Filter}, func_call, pred_call
 };
 
-#[cfg(test)]
-#[allow(unused)]
-mod working_regular_impl {
+pub mod working_regular_impl {
     use std::{collections::HashMap, convert::TryInto};
 
-    type Cell = (i32, i32);
+    type Cell = (isize, isize);
 
     fn iterate(active_cells: &mut Vec<Cell>) {
         fn get_cell_neighbors(cell: Cell) -> Vec<Cell> {
@@ -49,13 +47,13 @@ mod working_regular_impl {
             .collect();
     }
 
-    fn print_board(board: &Vec<Cell>) -> Option<()> {
+    pub fn print_board(board: &Vec<Cell>) -> Option<()> {
         let smallest_x = board.iter().copied().map(|(x, y)| x).min()?;
         let largest_x = board.iter().copied().map(|(x, y)| x).max()?;
         let smallest_y = board.iter().copied().map(|(x, y)| y).min()?;
         let largest_y = board.iter().copied().map(|(x, y)| y).max()?;
 
-        for i in smallest_y..=largest_y {
+        for i in (smallest_y..=largest_y).rev() {
             for j in smallest_x..=largest_x {
                 if board.contains(&(j, i)) {
                     print!("█");
@@ -93,10 +91,10 @@ type NeighborlyDeltas = make_list!(
 
     Delta<Pos1, Neg1>,
     Delta<Pos1, Zero>,
-    Delta<Pos1, Pos1>,
+    Delta<Pos1, Pos1>
 );
 
-struct ApplyDeltaToCell<T>(PhantomData<T>);
+pub struct ApplyDeltaToCell<T>(PhantomData<T>);
 impl<X: Number, Y: Number, D1: Number, D2: Number> Function<Delta<D1, D2>>
     for ApplyDeltaToCell<Cell<X, Y>>
 where
@@ -106,7 +104,7 @@ where
     type Apply = Cell<m!(add X, D1), m!(add Y, D2)>;
 }
 
-struct GetCellNeighbors;
+pub struct GetCellNeighbors;
 impl<X: Number, Y: Number> Function<Cell<X, Y>> for GetCellNeighbors
 where
     X: PeanoAdd<Neg1>,
@@ -119,7 +117,7 @@ where
     type Apply = <NeighborlyDeltas as Map<ApplyDeltaToCell<Cell<X, Y>>>>::Output;
 }
 
-struct CellComparisonFunction;
+pub struct CellComparisonFunction;
 impl<Cell1X: Number, Cell1Y: Number, Cell2X: Number, Cell2Y: Number> Function<
     (Cell<Cell1X, Cell1Y>,
     Cell<Cell2X, Cell2Y>)
@@ -158,7 +156,7 @@ where
 }
 
 
-struct CountInstances;
+pub struct CountInstances;
 impl<AccList, Cmp> Function<(AccList, Nil, Cmp)> for CountInstances {
     type Apply = AccList;
 }
@@ -170,7 +168,7 @@ where
     type Apply = func_call!(CountInstances[<AccList as IncrementItemCounter<X, Cmp>>::Output, XS, Cmp]);
 }
 
-struct Contains<Cmp>(PhantomData<Cmp>);
+pub struct Contains<Cmp>(PhantomData<Cmp>);
 impl<Cmp, Target> Function<(Nil, Target)> for Contains<Cmp> {
     type Apply = False;
 }
@@ -190,7 +188,7 @@ where
 
 type ContainsCell = Contains<CellComparisonFunction>;
 
-struct CellShouldLive<AliveCellList>(PhantomData<AliveCellList>);
+pub struct CellShouldLive<AliveCellList>(PhantomData<AliveCellList>);
 impl<X: Number, Y: Number, N: Number, AliveCellList> Function<(Cell<X, Y>, N)> for CellShouldLive<AliveCellList>
 where
     N: PeanoEqual<N2>,
@@ -209,12 +207,12 @@ where
     );
 }
 
-struct FirstTupleElement;
+pub struct FirstTupleElement;
 impl<A, B> Function<(A, B)> for FirstTupleElement {
     type Apply = A;
 }
 
-struct SingleGOLIter;
+pub struct SingleGOLIter;
 impl<CurrentCells> Function<CurrentCells> for SingleGOLIter 
 where 
     CurrentCells: Map<GetCellNeighbors>,
@@ -231,6 +229,38 @@ where
         ])
         as Filter<CellShouldLive<CurrentCells>>>::Output 
         as Map<FirstTupleElement>>::Output;
+}
+
+pub trait Reify {
+    type RuntimeValue;
+    fn reify() -> Self::RuntimeValue;
+}
+
+impl<X: Number, Y: Number> Reify for Cell<X, Y> {
+    type RuntimeValue = (isize, isize);
+
+    fn reify() -> Self::RuntimeValue {
+        (X::VALUE, Y::VALUE)
+    }
+}
+
+impl<X: Reify> Reify for Cons<X, Nil> {
+    type RuntimeValue = Vec<X::RuntimeValue>;
+    fn reify() -> Self::RuntimeValue {
+        vec![X::reify()]
+    }
+}
+
+impl<X: Reify, XS: Reify<RuntimeValue = Vec<X::RuntimeValue>>> Reify for Cons<X, XS>
+{
+    type RuntimeValue = Vec<X::RuntimeValue>;
+
+    fn reify() -> Self::RuntimeValue {
+        let mut ret = vec![X::reify()];
+        ret.extend(XS::reify());
+        ret
+    }
+    
 }
 
 #[cfg(test)]
