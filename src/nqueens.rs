@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{booleans::{Bool, False, Not, Or, True}, functions::{AnyTrue, Filter, Function, Map, FlatMap}, lists::{Cons, List, Nil, StrRepr}, numbers::{N0, N1, N2, N3, N4, N5, N8, Number, PeanoAbsDiff, PeanoEqual, PeanoLT, Range, Successor, Zero}};
+use crate::{booleans::{Bool, False, Not, Or, True}, functions::{AnyTrue, Filter, Function, Map, FlatMap}, lists::{Cons, List, Nil, StrRepr}, numbers::{N0, N1, N3, N4, N8, Number, PeanoAbsDiff, PeanoEqual, PeanoLT, Range, Successor, Zero, GEQZero}};
 
 #[derive(Default)]
 pub struct Queen<X: Number, Y: Number>(PhantomData<X>, PhantomData<Y>);
@@ -167,7 +167,7 @@ pub trait AddQueensIf<Predicate, N, X, Configs> {
 impl<N, X, Configs> AddQueensIf<False, N, X, Configs> for Configs {
     type Output = Configs;
 }
-impl<N: Number, X: Number, Configs: List> AddQueensIf<True, N, X, Configs> for Configs
+impl<N: Number, X: Number + GEQZero, Configs: List> AddQueensIf<True, N, X, Configs> for Configs
 where
     Configs: AddQueenToAll<N, X, Configs>,
     <Configs as AddQueenToAll<N, X, Configs>>::Output:

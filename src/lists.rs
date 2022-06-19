@@ -5,6 +5,19 @@ pub struct Nil;
 #[derive(Default)]
 pub struct Cons<X, XS>(PhantomData<X>, PhantomData<XS>);
 
+#[macro_export]
+macro_rules! make_list {
+    ($x:ty, $($xs:ty,)+) => {
+        $crate::lists::Cons<$x, $crate::make_list!($($xs,)+)>
+    };
+    ($x:ty $(,)?) => {
+        $crate::lists::Cons<$x, $crate::lists::Nil>
+    };
+    () => {
+        $crate::lists::Nil
+    };
+}
+
 pub trait List {}
 impl List for Nil {}
 impl<Item, Rest> List for Cons<Item, Rest> where Rest: List {}
@@ -26,18 +39,58 @@ impl<Item: StrRepr, Rest: Items> Items for Cons<Item, Rest> {
 }
 
 pub trait StrRepr {
-    fn str_repr() -> String;
+    fn str_repr() -> String {
+        std::any::type_name::<Self>().into()
+    }
 }
 impl StrRepr for Nil {
     fn str_repr() -> String {
         "[]".into()
     }
 }
-impl<I, R> StrRepr for Cons<I, R> where Cons<I, R>: Items {
+impl<I, R> StrRepr for Cons<I, R>
+where
+    Cons<I, R>: Items,
+{
     fn str_repr() -> String {
         format!("[{}]", Self::items().join(", "))
     }
 }
+
+macro_rules! tuple_impl_str_repr {
+    ($($t:ident,)*) => {
+        impl<$($t,)*> StrRepr for ($($t,)*) where 
+            $(
+                $t: StrRepr,
+            )*
+        {
+            fn str_repr() -> String {
+                let mut ret = String::new();
+                ret.push('(');
+
+                $(
+                    ret.push_str(&<$t as StrRepr>::str_repr());
+                    ret.push_str(", ");
+                )*
+                ret.pop();
+                ret.pop();
+
+                ret.push(')');
+                ret
+            }
+        }
+    };
+}
+
+tuple_impl_str_repr!(T1,);
+tuple_impl_str_repr!(T1,T2,);
+tuple_impl_str_repr!(T1,T2,T3,);
+tuple_impl_str_repr!(T1,T2,T3,T4,);
+tuple_impl_str_repr!(T1,T2,T3,T4,T5,);
+tuple_impl_str_repr!(T1,T2,T3,T4,T5,T6,);
+tuple_impl_str_repr!(T1,T2,T3,T4,T5,T6,T7,);
+tuple_impl_str_repr!(T1,T2,T3,T4,T5,T6,T7,T8,);
+tuple_impl_str_repr!(T1,T2,T3,T4,T5,T6,T7,T8,T9,);
 
 pub trait First {
     type First;

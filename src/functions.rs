@@ -1,15 +1,19 @@
 use crate::{
     booleans::{Bool, False, True},
     lists::{Cons, List, ListConcat, Nil},
-    numbers::{PeanoAbsDiff, Successor, Zero, N1},
+    numbers::{PeanoAbsDiff, Successor, Zero, N1, Number, GEQZero, Negative, GTZero},
 };
 
 pub trait Function<T> {
     type Apply;
 }
 
-pub trait Predicate<T>: Function<T> {}
-impl<T, U: Function<T>> Predicate<T> for U where Self::Apply: Bool {}
+pub trait Predicate<T>: Function<T> {
+    type BoolApply: Bool;
+}
+impl<T, U: Function<T>> Predicate<T> for U where <Self as Function<T>>::Apply: Bool {
+    type BoolApply = <Self as Function<T>>::Apply;
+}
 
 pub trait Map<F> {
     type Output: List;
@@ -66,9 +70,16 @@ impl<Item, L: List> PrependIf<False, Item> for L {
     type Output = Self;
 }
 
-struct Increment;
-impl<I> Function<I> for Increment {
+pub struct Increment;
+impl<I: Number + GEQZero> Function<I> for Increment {
     type Apply = Successor<I>;
+}
+impl<I: Number + GTZero> Function<Negative<Successor<I>>> for Increment {
+    type Apply = Negative<I>;
+}
+/// -1 + 1 = 0
+impl Function<Negative<Successor<Zero>>> for Increment {
+    type Apply = Zero;
 }
 
 struct Decrement;
@@ -80,7 +91,10 @@ struct IsZero;
 impl Function<Zero> for IsZero {
     type Apply = True;
 }
-impl<N> Function<Successor<N>> for IsZero {
+impl<N: GEQZero> Function<Successor<N>> for IsZero {
+    type Apply = False;
+}
+impl<N: GTZero> Function<Negative<N>> for IsZero {
     type Apply = False;
 }
 
@@ -95,4 +109,24 @@ impl<L: List> AnyTrue for Cons<True, L> {
 }
 impl<L: List + AnyTrue> AnyTrue for Cons<False, L> {
     type Output = <L as AnyTrue>::Output;
+}
+
+#[macro_export]
+macro_rules! func_call {
+    ($name:ty[$param:ty]) => {
+        <$name as $crate::functions::Function<$param>>::Apply
+    };
+    ($name:ty[$($param:ty),+]) => {
+        <$name as $crate::functions::Function<($($param,)+)>>::Apply
+    };
+}
+
+#[macro_export]
+macro_rules! pred_call {
+    ($name:ty[$param:ty]) => {
+        <$name as $crate::functions::Predicate<$param>>::BoolApply
+    };
+    ($name:ty[$($param:ty),+]) => {
+        <$name as $crate::functions::Predicate<($($param,)+)>>::BoolApply
+    };
 }
